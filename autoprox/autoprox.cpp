@@ -1,15 +1,8 @@
 // autoprox.cpp : Defines the entry point for the console application.
 //
-/*Version history */
-/*1.01 Added call to WSAStartup*/
+
 
 #include "stdafx.h"
-
-
-// NOTE: When building, link explicitly with the following libraries:
-//                               wininet.lib
-//                               ws2_32.lib
-//                               urlmon.lib
 
 #define WIN32_LEAN_AND_MEAN	1
 
@@ -21,6 +14,9 @@
 #include <ws2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "wininet.lib")
+
 
 void ErrorPrint();
 void reportFuncErr(char* funcName);
