@@ -430,7 +430,7 @@ DWORD ReadAutoProxyDetectType(DWORD *pAutoProxyDetectType)
 void DisplayHelp()
 {
 	printf("Help for AUTOPROX.EXE\r\n\r\n");
-	printf("Version : 2.42\r\n");
+	printf("Version : 2.43\r\n");
 	printf("Written by pierrelc@microsoft.com\r\n");
 	printf("Usage : AUTOPROX -a  (calling DetectAutoProxyUrl and saving wpad.dat file in temporary file if success)\r\n");
 	printf("Usage : AUTOPROX -n  (calling DetectAutoProxyUrl with PROXY_AUTO_DETECT_TYPE_DNS_A only and saving wpad.dat file in temporary file if success)\r\n");
@@ -438,7 +438,7 @@ void DisplayHelp()
 	printf("       -o: calls InternetInitializeAutoProxyDll with helper functions implemented in AUTOPROX\r\n");
 	printf("       -i:IP Address: calls InternetInitializeAutoProxyDll with helper functions implemented in AUTOPROX and using provided IP Address\r\n");
 	printf("       -v: verbose output for helper functions\r\n");
-	printf("For debugging: -d plus HKEY_CURRENT_USER\\Software\\Microsoft\\Windows Script\\Settings\\JITDebug=1");
+	printf("For debugging: -d plus HKEY_CURRENT_USER\\Software\\Microsoft\\Windows Script\\Settings\\JITDebug=1\r\n");
 	printf("AUTOPROX -u:url: calling DetectAutoProxyUrl and using autoproxy file to find the proxy for the url\r\n");
 	printf("AUTOPROX -u:url -p:path: using the autoproxy file/url from the path to find proxy for the url\r\n");
 	printf("Example: autoprox http://www.microsoft.com -> calling DetectAutoProxyUrl and using WPAD if found\r\n");
@@ -522,7 +522,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			bUseAutoDetection = TRUE;
 			continue;
 		}
-		//autodetect
+		//autodetect DNS only
 		if (LoopStringUpper(arg, (TCHAR*)L"-n") != NULL)
 		{
 			bUseAutoDetection = TRUE;
@@ -541,6 +541,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (LoopStringUpper(arg, (TCHAR*)L"-v") != NULL)
 		{
 			bVerboseHelpers = TRUE;
+			continue;
+		}
+		//Option to attach a debugger
+		if (LoopStringUpper(arg, (TCHAR*)L"-d") != NULL)
+		{
+			bAttachToDebugger = TRUE;
 			continue;
 		}
 
@@ -605,6 +611,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			bUseOwnHelperFunctions = TRUE;
 			continue;
 		}
+
 		printf("Invalid parameter : %S\r\n", argv[i]);
 		DisplayHelp();
 	}
@@ -711,9 +718,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	//for debugging : HKEY_CURRENT_USER\Software\Microsoft\Windows Script\Settings\JITDebug=1	
-	//if (!(LoadLibraryA("jscript.dll")))
-	//	reportFuncErr( "LoadLibrary jscript.dll");
+
 	if (!(hModJS = LoadLibraryA("jsproxy.dll")))
 		reportFuncErr( "LoadLibrary");
 
@@ -782,7 +787,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (bUseUrl)
 	{
 		GetHost(url, host);
-
+		if (bAttachToDebugger)
+		{
+			//pInternetGetProxyInfo needs to be called for jscript to be loaded by jsproxy and JITDebug registry value to be read and autoprox seen as running jscript for the VS debugger
+			//but jscript.dll is unloaded just after the call so we need to load jscipt.dll manually
+			//for debugging : HKEY_CURRENT_USER\Software\Microsoft\Windows Script\Settings\JITDebug=1
+			//Loading jscript manually does not help. You need an error in the script to be able to attach with VS jscript debugger but this is only usefull to look at variables
+			if (!(LoadLibraryA("jscript.dll")))
+				reportFuncErr( "LoadLibrary jscript.dll");
+			else
+			{
+				printf("You can attach a script debugger and then press enter to continue.");
+				getchar();
+			}
+		}
 		printf("\tCalling InternetGetProxyInfo for url %s and host %s\r\n", url, host);
 		if (!pInternetGetProxyInfo((LPSTR)url, sizeof(url),
 			(LPSTR)host, sizeof(host),
@@ -793,19 +811,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		printf("\tProxy returned for url %s is:  \r\n%s\t\r\n\n", url, proxy);
 
-		if (bAttachToDebugger)
-		{
-			printf("You can attach a script debugger and then press enter to continue.");
-			getchar();
-			printf("\tCalling InternetGetProxyInfo with url %s and host %s\r\n", url, host);
-			if (!pInternetGetProxyInfo((LPSTR)url, sizeof(url),
-				(LPSTR)host, sizeof(host),
-				&proxy, &dwProxyHostNameLength))
-			{
-				reportFuncErr("InternetGetProxyInfo");
-			}
-			printf("\tProxy returned for url %s is:  \r\n%s\t\r\n\n", url, proxy);
-		}
 	}
 	//Cleanup
 
