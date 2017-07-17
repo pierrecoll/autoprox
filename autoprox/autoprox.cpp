@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include "time.h"
+
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "urlmon.lib")
@@ -30,6 +32,40 @@ DWORD QueryWellKnownDnsName(__out PSTR *ppwszAutoProxyUrl);
 
 //errorstr.cpp
 LPCTSTR ErrorString(DWORD dwErrorCode);
+
+void print_time(void)
+{
+	struct tm newtime;
+	char am_pm[] = "AM";
+	__time64_t long_time;
+	char timebuf[26];
+	errno_t err;
+
+	// Get time as 64-bit integer.
+	_time64(&long_time);
+	// Convert to local time.
+	err = _localtime64_s(&newtime, &long_time);
+	if (err)
+	{
+		printf("Invalid argument to _localtime64_s.");
+		exit(1);
+	}
+	if (newtime.tm_hour > 12)        // Set up extension. 
+		strcpy_s(am_pm, sizeof(am_pm), "PM");
+	if (newtime.tm_hour > 12)        // Convert from 24-hour 
+		newtime.tm_hour -= 12;    // to 12-hour clock. 
+	if (newtime.tm_hour == 0)        // Set hour to 12 if midnight.
+		newtime.tm_hour = 12;
+
+	// Convert to an ASCII representation. 
+	err = asctime_s(timebuf, 26, &newtime);
+	if (err)
+	{
+		printf("Invalid argument to asctime_s.");
+		exit(1);
+	}
+	printf("\n(%.19s %s)\n", timebuf, am_pm);
+}
 
 //////////////////////////////////////////////////////////////////////
 // Methode : LoopStringUpper
@@ -73,7 +109,8 @@ DWORD __stdcall ResolveHostName( LPSTR   lpszHostName,
   DWORD error;
   if (bVerboseHelpers)
   {
-	  printf("ResolveHostByName called with lpszHostName: %s\r\n", lpszHostName);
+	  printf("ResolveHostName called with lpszHostName: %s\r\n", lpszHostName);
+	  print_time();
   }
   // Figure out first whether to resolve a name or an address literal.
   // If getaddrinfo( ) with the AI_NUMERICHOST flag succeeds, then
@@ -157,6 +194,7 @@ quit:
 		  if (bVerboseHelpers)
 		  {
 			  printf("ResolveHostByName returning lpszIPAddress: %s\r\n", lpszIPAddress);
+			  print_time();
 		  }
 	  }
   }
@@ -169,23 +207,28 @@ quit:
 /////////////////////////////////////////////////////////////////////
 BOOL __stdcall IsResolvable( LPSTR lpszHost )
 {
-  char szDummy[255];
-  DWORD dwDummySize = sizeof(szDummy) - 1;
-  printf("IsResolvable called with lpszHost: %s\r\n",lpszHost);
-  if( ResolveHostName( lpszHost, szDummy, &dwDummySize ) )
-  {
-	  if (bVerboseHelpers)
-	  {
-		  printf("IsResolvable returning FALSE\r\n");
-	  }
-	return(FALSE);
-	  
-  }
-  if (bVerboseHelpers)
-  {
-	  printf("IsResolvable returning TRUE\r\n");
-  }
-  return TRUE;
+	char szDummy[255];
+	DWORD dwDummySize = sizeof(szDummy) - 1;
+	if (bVerboseHelpers)
+	{
+		printf("IsResolvable called with lpszHost: %s\r\n", lpszHost);
+		print_time();
+	}
+	if( ResolveHostName( lpszHost, szDummy, &dwDummySize ) )
+	{
+		if (bVerboseHelpers)
+		{
+			printf("IsResolvable returning FALSE\r\n");
+			print_time();
+		}
+		return(FALSE);	  
+	}
+	if (bVerboseHelpers)
+	{
+		printf("IsResolvable returning TRUE\r\n");
+		print_time();
+	}
+	return TRUE;
 }
 
 //Rev1.7
@@ -194,25 +237,28 @@ BOOL __stdcall IsResolvable( LPSTR lpszHost )
 /////////////////////////////////////////////////////////////////////
 BOOL __stdcall IsResolvableEx( LPSTR lpszHost )
 {
-  char szDummy[255];
-  DWORD dwDummySize = sizeof(szDummy) - 1;
-  if (bVerboseHelpers)
-  {
-	  printf("IsResolvableEx called with lpszHost: %s\r\n", lpszHost);
-  }
-  if( ResolveHostName( lpszHost, szDummy, &dwDummySize ) )
-  {
+	char szDummy[255];
+	DWORD dwDummySize = sizeof(szDummy) - 1;
+	if (bVerboseHelpers)
+	{
+		printf("IsResolvableEx called with lpszHost: %s\r\n", lpszHost);
+		print_time();
+	}
+	if( ResolveHostName( lpszHost, szDummy, &dwDummySize ) )
+	{
 		if (bVerboseHelpers)
 		{
 			printf("IsResolvableEx returning FALSE\r\n");
+			print_time();
 		}
 		return( FALSE );
-  }
-  if (bVerboseHelpers)
-  {
-	  printf("IsResolvableEx returning TRUE\r\n");
-  }
-  return TRUE;
+	}
+	if (bVerboseHelpers)
+	{
+		printf("IsResolvableEx returning TRUE\r\n");
+		print_time();
+	}
+	return TRUE;
 }
 /////////////////////////////////////////////////////////////////////
 //  GetIPAddress                                  (a helper function)
@@ -220,39 +266,53 @@ BOOL __stdcall IsResolvableEx( LPSTR lpszHost )
 DWORD __stdcall GetIPAddress( LPSTR   lpszIPAddress,
                               LPDWORD lpdwIPAddressSize )
 {
-  char szHostBuffer[255];
-  printf("GetIPAddress called\r\n");
-  if (bUseIpAddress)
-  {
-	printf("Returning IP Address given as parameter: %s\r\n", myIpAddress);
-	strcpy_s(lpszIPAddress, 16, myIpAddress);
-	*lpdwIPAddressSize = strlen(myIpAddress);
-	return (ERROR_SUCCESS);
-  }
+	char szHostBuffer[255];
+	if (bVerboseHelpers)
+	{
+		printf("GetIPAddress called\r\n");
+		print_time();
+	}
+	if (bUseIpAddress)
+	{
+		if (bVerboseHelpers)
+		{
+			printf("Returning IP Address given as parameter: %s\r\n", myIpAddress);
+			print_time();
+		}
+		strcpy_s(lpszIPAddress, 16, myIpAddress);
+		*lpdwIPAddressSize = strlen(myIpAddress);
+		return (ERROR_SUCCESS);
+	}
 
-  if( gethostname( szHostBuffer, sizeof(szHostBuffer) - 1 ) != ERROR_SUCCESS )
-  {
-	printf("GetIPAddress returning ERROR_INTERNET_INTERNAL_ERROR\r\n");
-	return( ERROR_INTERNET_INTERNAL_ERROR );
-  }
-  DWORD dwReturn= ResolveHostName( szHostBuffer, 
-                           lpszIPAddress, 
-                           lpdwIPAddressSize ) ;
-  if (!dwReturn)
-  {
-	  if (bVerboseHelpers)
-	  {
-		  printf("GetIPAddress returning lpszIPAddress: %s\r\n", lpszIPAddress);
-	  }
-  }
-  else
-  {
-	  if (bVerboseHelpers)
-	  {
-		  printf("GetIPAddress returning error: %d\r\n", dwReturn);
-	  }
-  }
-  return dwReturn;
+	if( gethostname( szHostBuffer, sizeof(szHostBuffer) - 1 ) != ERROR_SUCCESS )
+	{
+		if (bVerboseHelpers)
+		{
+			printf("GetIPAddress returning ERROR_INTERNET_INTERNAL_ERROR\r\n");
+			print_time();
+		}
+		return( ERROR_INTERNET_INTERNAL_ERROR );
+	}
+	DWORD dwReturn= ResolveHostName( szHostBuffer, 
+							lpszIPAddress, 
+							lpdwIPAddressSize ) ;
+	if (!dwReturn)
+	{
+		if (bVerboseHelpers)
+		{
+			printf("GetIPAddress returning lpszIPAddress: %s\r\n", lpszIPAddress);
+			print_time();
+		}
+	}
+	else
+	{
+		if (bVerboseHelpers)
+		{
+			printf("GetIPAddress returning error: %d\r\n", dwReturn);
+			print_time();
+		}
+	}
+	return dwReturn;
 }
 
 //version 1.07
@@ -263,43 +323,53 @@ DWORD __stdcall GetIPAddress( LPSTR   lpszIPAddress,
 DWORD __stdcall GetIPAddressEx( LPSTR   lpszIPAddress,
                               LPDWORD lpdwIPAddressSize )
 {
-  char szHostBuffer[255];
-  if (bVerboseHelpers)
-  {
-	  printf("GetIPAddressEx called\r\n");
-  }
-  if (bUseIpAddress)
-  {
-	printf("Returning IP Address given as parameter: %s\r\n", myIpAddress);
-	strcpy_s(lpszIPAddress, 16, myIpAddress);
-	*lpdwIPAddressSize = strlen(myIpAddress);
-	return (ERROR_SUCCESS);
-  }
+	char szHostBuffer[255];
+	if (bVerboseHelpers)
+	{
+		printf("GetIPAddressEx called\r\n");
+		print_time();
+	}
+	if (bUseIpAddress)
+	{
+		if (bVerboseHelpers)
+		{
+			printf("Returning IP Address given as parameter: %s\r\n", myIpAddress);
+		}
+		strcpy_s(lpszIPAddress, 16, myIpAddress);
+		*lpdwIPAddressSize = strlen(myIpAddress);
+		return (ERROR_SUCCESS);
+	}
 
-  if( gethostname( szHostBuffer, sizeof(szHostBuffer) - 1 ) != ERROR_SUCCESS )
-  {
-	printf("GetIPAddressEx returning ERROR_INTERNET_INTERNAL_ERROR\r\n");
-    return( ERROR_INTERNET_INTERNAL_ERROR );
-  }
+	if( gethostname( szHostBuffer, sizeof(szHostBuffer) - 1 ) != ERROR_SUCCESS )
+	{
+		if (bVerboseHelpers)
+		{
+			printf("GetIPAddressEx returning ERROR_INTERNET_INTERNAL_ERROR\r\n");
+			print_time();
+		}
+		return( ERROR_INTERNET_INTERNAL_ERROR );
+	}
 
-  DWORD dwReturn= ResolveHostName( szHostBuffer, 
-                           lpszIPAddress, 
-                           lpdwIPAddressSize ) ;
-  if (!dwReturn)
-  {
-	  if (bVerboseHelpers)
-	  {
-		  printf("GetIPAddressEx returning lpszIPAddress: %s\r\n", lpszIPAddress);
-	  }
-  }
-  else
-  {
-	  if (bVerboseHelpers)
-	  {
-		  printf("GetIPAddressEx returning error: %d\r\n", dwReturn);
-	  }
-  }
-  return dwReturn;
+	DWORD dwReturn= ResolveHostName( szHostBuffer, 
+							lpszIPAddress, 
+							lpdwIPAddressSize ) ;
+	if (!dwReturn)
+	{
+		if (bVerboseHelpers)
+		{
+			printf("GetIPAddressEx returning lpszIPAddress: %s\r\n", lpszIPAddress);
+			print_time();
+		}
+	}
+	else
+	{
+		if (bVerboseHelpers)
+		{
+			printf("GetIPAddressEx returning error: %d\r\n", dwReturn);
+			print_time();
+		}
+	}
+	return dwReturn;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -309,39 +379,41 @@ BOOL __stdcall IsInNet( LPSTR lpszIPAddress,
                         LPSTR lpszDest, 
                         LPSTR lpszMask )
 {
-  DWORD dwDest;
-  DWORD dwIpAddr;
-  DWORD dwMask;
-  if (bVerboseHelpers)
-  {
-	  printf("IsInNet called with ");
-	  if ((lpszIPAddress) && (*lpszIPAddress))
-		  printf("lpszIPAddress: %s", lpszIPAddress);
-	  if ((lpszIPAddress) && (*lpszDest))
-		  printf(" lpszDest %s", lpszDest);
-	  if ((lpszMask) && (*lpszMask))
-		  printf(" lpszMask %s", lpszMask);
-	  printf("\r\n");
-  }
-  dwIpAddr = inet_addr( lpszIPAddress );
-  dwDest   = inet_addr( lpszDest );
-  dwMask   = inet_addr( lpszMask );
+	DWORD dwDest;
+	DWORD dwIpAddr;
+	DWORD dwMask;
+	if (bVerboseHelpers)
+	{
+		printf("IsInNet called with ");
+		if ((lpszIPAddress) && (*lpszIPAddress))
+			printf("lpszIPAddress: %s", lpszIPAddress);
+		if ((lpszIPAddress) && (*lpszDest))
+			printf(" lpszDest %s", lpszDest);
+		if ((lpszMask) && (*lpszMask))
+			printf(" lpszMask %s", lpszMask);
+		print_time();
+	}
+	dwIpAddr = inet_addr( lpszIPAddress );
+	dwDest   = inet_addr( lpszDest );
+	dwMask   = inet_addr( lpszMask );
 
-  if( ( dwDest == INADDR_NONE ) ||
-      ( dwIpAddr == INADDR_NONE ) ||
-      ( ( dwIpAddr & dwMask ) != dwDest ) )
-  {
-	  if (bVerboseHelpers)
-	  {
-		  printf("IsInNet returning FALSE\r\n");
-	  }
-    return( FALSE );
-  }
-  if (bVerboseHelpers)
-  {
-	  printf("IsInNet returning TRUE\r\n");
-  }
-  return( TRUE );
+	if( ( dwDest == INADDR_NONE ) ||
+		( dwIpAddr == INADDR_NONE ) ||
+		( ( dwIpAddr & dwMask ) != dwDest ) )
+	{
+		if (bVerboseHelpers)
+		{
+			printf("IsInNet returning FALSE\r\n");
+			print_time();
+		}
+		return( FALSE );
+	}
+	if (bVerboseHelpers)
+	{
+		printf("IsInNet returning TRUE\r\n");
+		print_time();
+	}
+	return( TRUE );
 }
 
 
@@ -430,7 +502,7 @@ DWORD ReadAutoProxyDetectType(DWORD *pAutoProxyDetectType)
 void DisplayHelp()
 {
 	printf("Help for AUTOPROX.EXE\r\n\r\n");
-	printf("Version : 2.43\r\n");
+	printf("Version : 2.44\r\n");
 	printf("Written by pierrelc@microsoft.com\r\n");
 	printf("Usage : AUTOPROX -a  (calling DetectAutoProxyUrl and saving wpad.dat file in temporary file if success)\r\n");
 	printf("Usage : AUTOPROX -n  (calling DetectAutoProxyUrl with PROXY_AUTO_DETECT_TYPE_DNS_A only and saving wpad.dat file in temporary file if success)\r\n");
