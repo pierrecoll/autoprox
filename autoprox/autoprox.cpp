@@ -502,7 +502,7 @@ DWORD ReadAutoProxyDetectType(DWORD *pAutoProxyDetectType)
 void DisplayHelp()
 {
 	printf("Help for AUTOPROX.EXE\r\n\r\n");
-	printf("Version : 2.44\r\n");
+	printf("Version : 2.45\r\n");
 	printf("Written by pierrelc@microsoft.com\r\n");
 	printf("Usage : AUTOPROX -a  (calling DetectAutoProxyUrl and saving wpad.dat file in temporary file if success)\r\n");
 	printf("Usage : AUTOPROX -n  (calling DetectAutoProxyUrl with PROXY_AUTO_DETECT_TYPE_DNS_A only and saving wpad.dat file in temporary file if success)\r\n");
