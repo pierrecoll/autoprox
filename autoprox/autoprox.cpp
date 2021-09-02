@@ -430,7 +430,7 @@ DWORD ReadAutoProxyDetectType(DWORD *pAutoProxyDetectType)
 void DisplayHelp()
 {
 	printf("Help for AUTOPROX.EXE\r\n\r\n");
-	printf("Version : 2.42\r\n");
+	printf("Version : 2.43\r\n");
 	printf("Written by pierrelc@microsoft.com\r\n");
 	printf("Usage : AUTOPROX -a  (calling DetectAutoProxyUrl and saving wpad.dat file in temporary file if success)\r\n");
 	printf("Usage : AUTOPROX -n  (calling DetectAutoProxyUrl with PROXY_AUTO_DETECT_TYPE_DNS_A only and saving wpad.dat file in temporary file if success)\r\n");
@@ -508,7 +508,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		wcscpy_s(arg, argv[i]);
 		_wcsupr_s(arg);
-
+		//v2.43 Limiting to two characters
+		arg[2] = '\0';
 		//Help
 		if ((LoopStringUpper(arg, (TCHAR*)L"-h") != NULL) || (LoopStringUpper(arg, (TCHAR*)"-?") != NULL))
 		{
@@ -545,7 +546,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 		//url given 
-		if (LoopStringUpper(arg, (TCHAR*)L"-u:") != NULL)
+		if (LoopStringUpper(arg, (TCHAR*)L"-u") != NULL)
 		{
 			wcscpy_s(Url, argv[i] + wcslen(L"-u:"));
 			size_t i;
@@ -557,7 +558,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 		//pac file given 
-		if (LoopStringUpper(arg, (TCHAR*)L"-p:") != NULL)
+		if (LoopStringUpper(arg, (TCHAR*)L"-p") != NULL)
 		{
 			wcscpy_s(File, argv[i] + wcslen(L"-p:"));
 			size_t i;
