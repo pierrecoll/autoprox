@@ -215,3 +215,5 @@ ModelManifest.xml
 /autoprox/autoprox - Copie.cpp
 *.old
 /autoprox.zip
+/autoprox.VC.db
+/autoprox.VC.VC.opendb
