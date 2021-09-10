@@ -675,7 +675,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		//IP address given
 		//url given 
-		if (LoopStringUpper(arg, (TCHAR*)L"-i:") != NULL)
+		if (LoopStringUpper(arg, (TCHAR*)L"-i") != NULL)
 		{
 			wcscpy_s(IpAddress, argv[i] + wcslen(L"-i:"));
 			size_t i;
