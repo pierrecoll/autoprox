@@ -24,8 +24,9 @@ void ErrorPrint();
 void reportFuncErr(char* funcName);
 TCHAR * LoopStringUpper(TCHAR *arg1, TCHAR *arg2);
 
-TCHAR IpAddress[16];
-char myIpAddress[16];
+#define MAX_IP_ADDRESS 16   // xxx.xxx.xxx.xxx
+TCHAR IpAddress[MAX_IP_ADDRESS];
+char ipAddress[MAX_IP_ADDRESS];
 BOOL bUseIpAddress = FALSE;
 BOOL bVerboseHelpers = FALSE;
 DWORD QueryWellKnownDnsName(__out PSTR *ppwszAutoProxyUrl);
@@ -276,11 +277,11 @@ DWORD __stdcall GetIPAddress( LPSTR   lpszIPAddress,
 	{
 		if (bVerboseHelpers)
 		{
-			printf("Returning IP Address given as parameter: %s\r\n", myIpAddress);
+			printf("Returning IP Address given as parameter: %s\r\n", ipAddress);
 			print_time();
 		}
-		strcpy_s(lpszIPAddress, 16, myIpAddress);
-		*lpdwIPAddressSize = strlen(myIpAddress);
+		strcpy_s(lpszIPAddress, 16, ipAddress);
+		*lpdwIPAddressSize = strlen(ipAddress);
 		return (ERROR_SUCCESS);
 	}
 
@@ -333,10 +334,10 @@ DWORD __stdcall GetIPAddressEx( LPSTR   lpszIPAddress,
 	{
 		if (bVerboseHelpers)
 		{
-			printf("Returning IP Address given as parameter: %s\r\n", myIpAddress);
+			printf("Returning IP Address given as parameter: %s\r\n", ipAddress);
 		}
-		strcpy_s(lpszIPAddress, 16, myIpAddress);
-		*lpdwIPAddressSize = strlen(myIpAddress);
+		strcpy_s(lpszIPAddress, 16, ipAddress);
+		*lpdwIPAddressSize = strlen(ipAddress);
 		return (ERROR_SUCCESS);
 	}
 
@@ -385,6 +386,12 @@ BOOL __stdcall IsInNet( LPSTR lpszIPAddress,
 	if (bVerboseHelpers)
 	{
 		printf("IsInNet called with ");
+
+		if (bUseIpAddress)
+		{
+			printf(" IP address passed as parameter ");
+			lstrcpynA(lpszIPAddress, ipAddress, MAX_IP_ADDRESS);
+		}
 		if ((lpszIPAddress) && (*lpszIPAddress))
 			printf("lpszIPAddress: %s", lpszIPAddress);
 		if ((lpszIPAddress) && (*lpszDest))
@@ -502,7 +509,7 @@ DWORD ReadAutoProxyDetectType(DWORD *pAutoProxyDetectType)
 void DisplayHelp()
 {
 	printf("Help for AUTOPROX.EXE\r\n\r\n");
-	printf("Version : 2.45\r\n");
+	printf("Version : 2.46 September 2021\r\n");
 	printf("Written by pierrelc@microsoft.com\r\n");
 	printf("Usage : AUTOPROX -a  (calling DetectAutoProxyUrl and saving wpad.dat file in temporary file if success)\r\n");
 	printf("Usage : AUTOPROX -n  (calling DetectAutoProxyUrl with PROXY_AUTO_DETECT_TYPE_DNS_A only and saving wpad.dat file in temporary file if success)\r\n");
@@ -630,7 +637,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			size_t i;
 			wcstombs_s(&i, url, (size_t)INTERNET_MAX_URL_LENGTH,
 				Url, (size_t)INTERNET_MAX_URL_LENGTH);
-			printf("Seaching proxy for url : %s\r\n", url);
+			printf("Searching proxy for url : %s\r\n", url);
 			bUseUrl = TRUE;
 			continue;
 		}
@@ -678,8 +685,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (LoopStringUpper(arg, (TCHAR*)L"-i") != NULL)
 		{
 			wcscpy_s(IpAddress, argv[i] + wcslen(L"-i:"));
+			//converting to char
 			size_t i;
-			wcstombs_s(&i, myIpAddress, (size_t)16,IpAddress, (size_t)16);
+			wcstombs_s(&i, ipAddress, (size_t)16,IpAddress, (size_t)16);
 			bUseIpAddress = TRUE;
 			bUseOwnHelperFunctions = TRUE;
 			continue;
