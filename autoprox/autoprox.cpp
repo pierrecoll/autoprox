@@ -661,7 +661,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					printf("Downloading of %s failed\r\n", TempFile);
 					printf("URLDownloadToFileA error : %X %d\r\n", hr, hr);
-					reportFuncErr("URLDownloadToFileA");
+					exit(-1L);
 				}
 				strcpy_s(TempFile, TempDownload);
 				bUseTempFile = TRUE;
@@ -788,7 +788,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (hr != S_OK)
 		{
 			printf("URLDownloadToFileA error : %X (%d)\r\n", hr, hr);
-			reportFuncErr("URLDownloadToFileA");
+			exit(-1L);
 		}
 		bUseTempFile = TRUE;
 		printf("autoproxy file saved in %s\r\n", TempFile);
