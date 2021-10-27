@@ -18,6 +18,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "wininet.lib")
+#pragma comment(lib, "version.lib")
 
 
 void ErrorPrint();
@@ -30,6 +31,7 @@ char ipAddress[MAX_IP_ADDRESS];
 BOOL bUseIpAddress = FALSE;
 BOOL bVerboseHelpers = FALSE;
 DWORD QueryWellKnownDnsName(__out PSTR *ppwszAutoProxyUrl);
+DWORD GetBuildVersion(TCHAR* pszFilePath);
 
 //errorstr.cpp
 LPCTSTR ErrorString(DWORD dwErrorCode);
@@ -509,7 +511,7 @@ DWORD ReadAutoProxyDetectType(DWORD *pAutoProxyDetectType)
 void DisplayHelp()
 {
 	printf("Help for AUTOPROX.EXE\r\n\r\n");
-	printf("Version : 2.46 September 2021\r\n");
+	printf("Version : 2.47 October 2021\r\n");
 	printf("Written by pierrelc@microsoft.com\r\n");
 	printf("Usage : AUTOPROX -a  (calling DetectAutoProxyUrl and saving wpad.dat file in temporary file if success)\r\n");
 	printf("Usage : AUTOPROX -n  (calling DetectAutoProxyUrl with PROXY_AUTO_DETECT_TYPE_DNS_A only and saving wpad.dat file in temporary file if success)\r\n");
@@ -798,12 +800,27 @@ int _tmain(int argc, _TCHAR* argv[])
 			exit(0L);
 		}
 	}
+	HMODULE hModKernelbase = NULL;
+	if (!(hModKernelbase = LoadLibraryA("kernelbase.dll")))
+		reportFuncErr("LoadLibrary");
 
+	WCHAR pszKernelbasePath[MAX_PATH];
+	GetModuleFileName(hModKernelbase, pszKernelbasePath, MAX_PATH);
 
-	if (!(hModJS = LoadLibraryA("jsproxy.dll")))
-		reportFuncErr( "LoadLibrary");
+	DWORD BuildVersion = GetBuildVersion(pszKernelbasePath);
 
-
+	if (BuildVersion >= 22000)  //0x55f0
+	{
+		//Windows 11
+		printf("Build version above 22000 (Windows11): loading jsproxylegacy.dll from current directory\r\n");
+		if (!(hModJS = LoadLibraryA(".\\jsproxylegacy.dll")))
+			reportFuncErr("LoadLibrary");
+	}
+	else
+	{
+		if (!(hModJS = LoadLibraryA("jsproxy.dll")))
+			reportFuncErr("LoadLibrary");
+	}
 	if (!(pInternetInitializeAutoProxyDll = (pfnInternetInitializeAutoProxyDll)
 		GetProcAddress(hModJS, "InternetInitializeAutoProxyDll")) ||
 		!(pInternetDeInitializeAutoProxyDll = (pfnInternetDeInitializeAutoProxyDll)
@@ -811,7 +828,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		!(pInternetGetProxyInfo = (pfnInternetGetProxyInfo)
 		GetProcAddress(hModJS, "InternetGetProxyInfo")))
 		reportFuncErr( "GetProcAddress");
-
 
 	WSADATA wsaData;
 
@@ -836,9 +852,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	else
 		printf("The Winsock 2.2 dll was found okay\n");
-
-
-
 
 	if (bUseOwnHelperFunctions == TRUE)
 	{
@@ -909,6 +922,48 @@ int _tmain(int argc, _TCHAR* argv[])
 	return( 0 );
 }
 
+DWORD GetBuildVersion(TCHAR* pszFilePath)
+{
+	DWORD BuildVersion = 0;
+	DWORD               dwSize = 0;
+	BYTE* pbVersionInfo = NULL;
+	VS_FIXEDFILEINFO* pFileInfo = NULL;
+	UINT                puLenFileInfo = 0;
+
+	// Get the version information for the file requested
+	dwSize = GetFileVersionInfoSize(pszFilePath, NULL);
+	if (dwSize == 0)
+	{
+		printf("Error in GetFileVersionInfoSize: %d\n", GetLastError());
+		return -1;
+	}
+
+	pbVersionInfo = new BYTE[dwSize];
+
+	if (!GetFileVersionInfo(pszFilePath, 0, dwSize, pbVersionInfo))
+	{
+		printf("Error in GetFileVersionInfo: %d\n", GetLastError());
+		delete[] pbVersionInfo;
+		return -1;
+	}
+
+	if (!VerQueryValue(pbVersionInfo, TEXT("\\"), (LPVOID*)&pFileInfo, &puLenFileInfo))
+	{
+		printf("Error in VerQueryValue: %d\n", GetLastError());
+		delete[] pbVersionInfo;
+		return -1;
+	}
+
+	// pFileInfo->dwFileVersionMS is usually zero. However, you should check
+	// this if your version numbers seem to be wrong
+
+	//printf("File Version: %d.%d\n",
+	//	(pFileInfo->dwFileVersionLS >> 16) & 0xffff,	
+	//	(pFileInfo->dwFileVersionLS >> 0) & 0xff
+	//);
+	BuildVersion = (pFileInfo->dwFileVersionLS >> 16) & 0xffff;	
+	return BuildVersion;
+}
 
 DWORD
 QueryWellKnownDnsName(
