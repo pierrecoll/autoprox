@@ -520,7 +520,7 @@ void DisplayHelp()
 	printf("For debugging: -d plus HKEY_CURRENT_USER\\Software\\Microsoft\\Windows Script\\Settings\\JITDebug=1\r\n");
 	printf("AUTOPROX -u:url: calling DetectAutoProxyUrl and using autoproxy file to find the proxy for the url\r\n");
 	printf("AUTOPROX -u:url -p:path: using the autoproxy file/url from the path to find proxy for the url\r\n");
-	printf("Example: autoprox http://www.microsoft.com -> calling DetectAutoProxyUrl and using WPAD if found\r\n");
+	printf("Example: autoprox -u:http://www.microsoft.com -> calling DetectAutoProxyUrl and using WPAD if found\r\n");
 	printf("Example: autoprox -o -u:http://www.microsoft.com -p:c:\\inetpub\\wwwroot\\wpad.dat\r\n");
 	printf("Example: autoprox -u:http://www.microsoft.com -p:http://proxy/wpad.dat\r\n");
 	printf("Example: autoprox -d -u:http://www.microsoft.com -p:http://proxy/wpad.dat\r\n");
